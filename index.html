@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Der Pate – Bottrop</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="assets/lib/leaflet.css">
+</head>
+<body>
+
+<!-- ── START SCREEN ── -->
+<div class="screen active" id="start-screen">
+  <div class="start-logo">Der Pate</div>
+  <div class="start-sub">von Bottrop</div>
+  <div class="start-box">
+    <label>Dein Name, Pate</label>
+    <input type="text" id="name-input" placeholder="z.B. Salvatore Ricci" maxlength="20"/>
+    <button class="btn-gold" id="btn-start">Die Stadt gehört mir</button>
+    <button class="btn-ghost" id="btn-continue" style="display:none;">Spiel fortsetzen</button>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div class="screen" id="game-screen">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="logo-small">Der Pate</div>
+    <div class="topbar-sep"></div>
+    <div class="stat-block">
+      <div class="stat-label">Kasse</div>
+      <div class="stat-val gold" id="hud-money">0 €</div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="energy-wrap">
+      <div style="display:flex;justify-content:space-between;">
+        <div class="stat-label">Energie</div>
+        <div class="stat-label" id="hud-energy-text">100/100</div>
+      </div>
+      <div class="energy-bar-bg"><div class="energy-bar-fill" id="hud-energy-bar" style="width:100%"></div></div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="stat-block">
+      <div class="stat-label">Gebäude</div>
+      <div class="stat-val green" id="hud-buildings">0/50</div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="stat-block">
+      <div class="stat-label">Ehre</div>
+      <div class="stat-val honor" id="hud-honor">0</div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="stat-block">
+      <div class="stat-label">Eink./Tag</div>
+      <div class="stat-val gold" id="hud-income">0 €</div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div id="player-name-display"></div>
+    <div class="topbar-sep"></div>
+    <button class="nav-btn active" id="btn-map-view">Stadt</button>
+    <button class="nav-btn" id="btn-hq-view">HQ</button>
+    <button class="nav-btn" id="btn-markt-view">🚉 Markt</button>
+  </div>
+
+  <!-- Main area -->
+  <div id="main-content">
+
+    <!-- City Map -->
+    <div id="map-view">
+      <div id="leaflet-map"></div>
+    </div><!-- /#map-view -->
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="sidebar-section">
+        <h4>Status</h4>
+        <div class="level-row">
+          <div>
+            <div class="stat-label">Level</div>
+            <div class="level-num" id="sb-level">1</div>
+          </div>
+          <div class="rank-badge" id="sb-rank">Neuling</div>
+        </div>
+        <div class="xp-bar-bg"><div class="xp-bar-fill" id="sb-xp-bar" style="width:0%"></div></div>
+        <div class="xp-text" id="sb-xp-text">0 / 100 XP</div>
+        <div style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;">
+            <div class="stat-label">Ehre</div>
+            <div class="stat-label" id="sb-honor-text">0 / 500</div>
+          </div>
+          <div class="honor-bar-bg"><div class="honor-bar-fill" id="sb-honor-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h4>Nächstes Schutzgeld</h4>
+        <div id="sgeld-timer" style="font-family:'Special Elite',serif;font-size:18px;color:var(--gold);">24:00:00</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="sgeld-amount-preview">0 € erwartet</div>
+      </div>
+
+      <div class="sidebar-section" style="padding-bottom:6px;"><h4>Aktivitäten</h4></div>
+      <div id="activity-log"></div>
+
+      <div id="mission-bar">
+        <h4>Auf Tour</h4>
+        <div id="mission-content">
+          <div style="font-size:11px;color:var(--muted);">Kein aktiver Auftrag</div>
+        </div>
+      </div>
+
+      <!-- Building info -->
+      <div id="building-info" style="border-top:1px solid var(--border);flex-shrink:0;">
+        <div id="bi-empty" style="font-size:11px;color:var(--muted);padding:14px;text-align:center;line-height:1.6;">
+          Fahre über ein Gebäude<br>um Details zu sehen
+        </div>
+        <div id="bi-content" style="display:none;padding:12px 14px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="font-size:28px;" id="bi-icon">🏪</div>
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);" id="bi-name">-</div>
+              <div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;" id="bi-type">-</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.05em;margin-bottom:10px;" id="bi-osm"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px;">
+            <div style="background:var(--dim);padding:5px 8px;border:1px solid var(--border);">
+              <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Einkommen</div>
+              <div style="font-size:13px;color:var(--gold);" id="bi-income">-</div>
+            </div>
+            <div style="background:var(--dim);padding:5px 8px;border:1px solid var(--border);">
+              <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Stärke</div>
+              <div style="font-size:13px;color:var(--text);" id="bi-strength">-</div>
+            </div>
+            <div style="background:var(--dim);padding:5px 8px;border:1px solid var(--border);">
+              <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Energie</div>
+              <div style="font-size:13px;color:var(--text);" id="bi-energy">-</div>
+            </div>
+            <div style="background:var(--dim);padding:5px 8px;border:1px solid var(--border);">
+              <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Reisezeit</div>
+              <div style="font-size:13px;color:var(--text);" id="bi-time">-</div>
+            </div>
+          </div>
+          <div style="font-size:11px;margin-bottom:8px;padding:6px 8px;border-left:2px solid var(--border);" id="bi-status">-</div>
+          <div id="bi-lock" style="font-size:9px;color:var(--muted);text-align:center;margin-bottom:4px;letter-spacing:.05em;">🔓 Klicken zum Sperren</div>
+          <button class="tt-btn" id="tt-btn">Einnehmen</button>
+        </div>
+      </div>
+    </div><!-- /#sidebar -->
+
+  </div><!-- /#main-content -->
+
+  <!-- HQ Overlay — Paper Doll -->
+  <div id="hq-screen">
+    <div id="hq-header">
+      <h2>⚜ Hauptquartier</h2>
+      <button class="btn-ghost" id="btn-close-hq">← Zurück</button>
+    </div>
+
+    <!-- Paper Doll: 3 Spalten -->
+    <div id="paperdoll-area">
+
+      <!-- Links: Ausrüstung Kopf / Waffe / Körper / Extra -->
+      <div class="pd-col-left">
+        <div class="pd-section-label">Ausrüstung</div>
+        <div class="pd-slot" data-slot="kopf">
+          <div class="pd-slot-icon">🎩</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Kopf</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="waffe">
+          <div class="pd-slot-icon">🔫</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Waffe</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="körper">
+          <div class="pd-slot-icon">🥼</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Körper</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="extra">
+          <div class="pd-slot-icon">🌟</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Extra</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mitte: Charakter-Figur + Infos -->
+      <div class="pd-col-center">
+        <div id="char-figure">
+          <div class="cf-avatar">🤵</div>
+          <div class="cf-label">PATE</div>
+        </div>
+        <div id="hq-name" class="pd-char-name">-</div>
+        <div id="hq-rank" class="pd-char-rank">Neuling</div>
+        <div class="pd-char-honor">⚜ <span id="hq-honor">0</span> Ehre</div>
+        <div class="pd-xp-row">
+          <div class="xp-bar-bg"><div class="xp-bar-fill" id="hq-xp-bar" style="width:0%"></div></div>
+          <div class="xp-text" id="hq-xp-text">0 / 100 XP</div>
+        </div>
+      </div>
+
+      <!-- Rechts: Ausrüstung Hals / Hand / Füße -->
+      <div class="pd-col-right">
+        <div class="pd-section-label">&nbsp;</div>
+        <div class="pd-slot" data-slot="hals">
+          <div class="pd-slot-icon">📿</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Hals</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="hand">
+          <div class="pd-slot-icon">💍</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Hand</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="füße">
+          <div class="pd-slot-icon">👢</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Füße</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /#paperdoll-area -->
+
+    <!-- Unten: Stats + Inventar -->
+    <div id="hq-bottom">
+      <div id="stats-panel">
+        <div class="panel-title">Stats verbessern</div>
+        <div id="stats-upgrade-grid"></div>
+      </div>
+      <div id="inv-panel-hq">
+        <div class="panel-title">Inventar</div>
+        <div id="inventory-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /#hq-screen -->
+
+  <!-- Schwarzmarkt Overlay — full game-screen -->
+  <div id="markt-screen">
+    <div id="markt-header">
+      <h2>🚉 Bahnhof – Schwarzmarkt</h2>
+      <button class="btn-ghost" id="btn-close-markt">← Zurück</button>
+    </div>
+    <div id="markt-content">
+      <div class="markt-npc">
+        <div class="markt-npc-portrait">🕵️</div>
+        <div class="markt-npc-name">„Der Pole"</div>
+        <div class="markt-npc-quote">"Ich frag nicht woher du kommst. Du fragst nicht woher das kommt. Wir verstehen uns."</div>
+        <div class="markt-timer-box">
+          <div class="markt-timer-label">Neues Angebot in</div>
+          <div class="markt-timer-val" id="markt-timer">24:00:00</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);text-align:center;line-height:1.5;">Bezahlung in Geld 💰<br>oder Ehre ⚜️</div>
+      </div>
+      <div class="markt-items" id="markt-items"></div>
+    </div>
+  </div>
+
+</div><!-- /#game-screen -->
+
+<!-- ── KAMPF SCREEN ── -->
+<div id="kampf-screen">
+  <div id="phase-ankunft">
+    <div class="ankunft-scene">
+      <div class="ankunft-left">
+        <div class="ankunft-building-art" id="ka-art">🏪</div>
+        <div class="ankunft-building-name" id="ka-name">-</div>
+        <div class="ankunft-building-desc" id="ka-desc">-</div>
+      </div>
+      <div class="ankunft-right">
+        <div class="npc-portrait" id="ka-portrait">👨</div>
+        <div class="npc-name" id="ka-npc-name">-</div>
+        <div class="npc-title" id="ka-npc-title">-</div>
+        <div class="npc-quote" id="ka-npc-quote">"..."</div>
+        <div class="npc-stats-row">
+          <div class="npc-stat"><div class="ns-label">HP</div><div class="ns-val" id="ka-hp">-</div></div>
+          <div class="npc-stat"><div class="ns-label">Stärke</div><div class="ns-val" id="ka-str">-</div></div>
+          <div class="npc-stat"><div class="ns-label">Gefahr</div><div class="ns-val" id="ka-danger">-</div></div>
+        </div>
+        <button class="btn-gold" id="btn-start-kampf">Auf ihn! 💪</button>
+        <button class="btn-ghost" id="btn-abort-kampf">Feige zurück</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="phase-kampf">
+    <div class="kampf-header">
+      <div class="kampf-combatant">
+        <div class="kampf-combatant-name" id="kk-player-name">Du</div>
+        <div class="hp-bar-bg">
+          <div class="hp-bar-fill player" id="kk-player-hp-bar" style="width:100%"></div>
+          <div class="hp-text" id="kk-player-hp-text">100/100</div>
+        </div>
+      </div>
+      <div class="kampf-vs">VS</div>
+      <div class="kampf-combatant">
+        <div class="kampf-combatant-name" id="kk-enemy-name">-</div>
+        <div class="hp-bar-bg">
+          <div class="hp-bar-fill enemy" id="kk-enemy-hp-bar" style="width:100%"></div>
+          <div class="hp-text" id="kk-enemy-hp-text">100/100</div>
+        </div>
+      </div>
+    </div>
+    <div class="kampf-body">
+      <div class="kampf-log" id="kampf-log"></div>
+      <div class="kampf-side-panel">
+        <div style="font-size:48px;text-align:center;" id="kk-enemy-portrait">👨</div>
+        <div class="kampf-status-box"><div class="ks-title">Runde</div><div class="ks-val" id="kk-round">1</div></div>
+        <div class="kampf-status-box"><div class="ks-title">Waffe</div><div class="ks-val" id="kk-weapon">-</div></div>
+        <div class="kampf-status-box"><div class="ks-title">Status</div><div class="ks-val" id="kk-status">Kampf läuft…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="phase-ergebnis">
+    <div class="ergebnis-scene" id="er-scene">🏆</div>
+    <div class="ergebnis-title" id="er-title">Sieg!</div>
+    <div class="ergebnis-desc" id="er-desc"></div>
+    <div class="ergebnis-rewards" id="er-rewards"></div>
+    <button class="btn-gold" id="btn-er-close" style="margin-top:8px;width:200px;">Zurück zur Stadt</button>
+  </div>
+</div>
+
+<!-- ── EINSCHÜCHTERUNG SCREEN ── -->
+<div id="einschuechterung-screen">
+  <div class="einsch-scene">
+
+    <!-- Linke Seite: Hintergrundbild + Gebäudename-Overlay -->
+    <div class="einsch-left">
+      <img class="einsch-bg-img" src="assets/images/backgrounds/wohnhaus_nacht.jpeg" alt="">
+      <div class="einsch-building-overlay">
+        <div class="einsch-building-label" id="einsch-name">Wohngebäude</div>
+        <div class="einsch-building-addr" id="einsch-addr"></div>
+      </div>
+    </div>
+
+    <!-- Rechte Seite: NPC-Info -->
+    <div class="einsch-right">
+      <div class="einsch-npc-card">
+        <img id="einsch-portrait-img" class="einsch-npc-img" src="" alt="" style="display:none;">
+        <div class="einsch-anwohner" id="einsch-portrait">👵</div>
+        <div class="einsch-anwohner-name" id="einsch-anwohner-name">-</div>
+        <div class="einsch-anwohner-title" id="einsch-anwohner-title">-</div>
+      </div>
+      <div class="einsch-text" id="einsch-text">...</div>
+      <div class="einsch-result" id="einsch-result"></div>
+      <button class="btn-gold einsch-btn" id="btn-einsch-close">Weitermachen</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+<div class="modal-overlay" id="sgeld-modal">
+  <div class="modal-box" style="text-align:center;">
+    <h2>💰 Schutzgeld eingegangen</h2>
+    <p>Deine Leute haben kassiert.</p>
+    <div class="sgeld-amount" id="sgeld-modal-amount">0 €</div>
+    <div style="font-size:11px;color:var(--muted);" id="sgeld-modal-detail"></div>
+    <div class="modal-actions"><button class="btn-gold" id="sgeld-close">Einstreichen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="equip-modal">
+  <div class="modal-box">
+    <h2 id="em-title">Item anlegen</h2>
+    <div class="drop-item" id="em-item"></div>
+    <p id="em-desc" style="margin-top:10px;"></p>
+    <div class="modal-actions">
+      <button class="btn-gold" id="em-equip">Anlegen</button>
+      <button class="btn-ghost" id="em-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ── SCRIPTS (load order matters) ── -->
+<script src="assets/lib/leaflet.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/constants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/city.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/markt.js"></script>
+<script src="js/hq.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>

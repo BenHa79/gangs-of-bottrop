@@ -1,0 +1,24 @@
+# Abhängigkeiten
+node_modules/
+
+# Datenbanken
+*.db
+*.sqlite
+
+# Umgebungsvariablen (nie in Git!)
+.env
+
+# Lokal generierte OSM-Daten
+# HINWEIS: wohngebaeude.json wird für den Betrieb benötigt.
+# Entweder hier auskommentieren ODER python tools/fetch_wohngebaeude.py
+# nach dem Deployment auf Railway ausführen.
+assets/data/bottrop.json
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+*.swo
