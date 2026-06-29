@@ -37,9 +37,10 @@ function loadGame() {
 // --------------- Building interaction ---------------
 
 function canTake(b) {
-  if (!G)          return { ok: false, reason: '' };
-  if (b.owned)     return { ok: false, reason: 'Bereits dein' };
-  if (G.mission)   return { ok: false, reason: '⏳ Auftrag läuft' };
+  if (!G)             return { ok: false, reason: '' };
+  if (b.ownedByOther) return { ok: false, reason: 'Fremdes Revier' };
+  if (b.owned)        return { ok: false, reason: 'Bereits dein' };
+  if (G.mission)      return { ok: false, reason: '⏳ Auftrag läuft' };
   if (G.player.energy < b.data.energyCost)
     return { ok: false, reason: `❌ Zu wenig Energie (${b.data.energyCost} nötig)` };
   if (!b.data.isResidential) {
@@ -127,14 +128,40 @@ async function startGame() {
 // EVENT LISTENERS (DOM ready)
 // ============================================================
 
-// Start screen
-document.getElementById('btn-start').addEventListener('click', async () => {
-  const name = document.getElementById('name-input').value.trim();
-  if (!name) { showToast('Gib deinen Namen ein!'); return; }
-  G = newGame(name); saveGame(); await startGame();
+// ── Auth: Login ──────────────────────────────────────────────
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl    = document.getElementById('auth-error');
+  errEl.textContent = '';
+  if (!username || !password) { errEl.textContent = 'Benutzername und Passwort eingeben.'; return; }
+  try {
+    document.getElementById('btn-login').disabled = true;
+    G = await api.login(username, password);
+    await startGame();
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    document.getElementById('btn-login').disabled = false;
+  }
 });
-document.getElementById('btn-continue').addEventListener('click', async () => {
-  G = loadGame(); await startGame();
+
+// ── Auth: Registrieren ───────────────────────────────────────
+document.getElementById('btn-register').addEventListener('click', async () => {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl    = document.getElementById('auth-error');
+  errEl.textContent = '';
+  if (!username || !password) { errEl.textContent = 'Benutzername und Passwort eingeben.'; return; }
+  try {
+    document.getElementById('btn-register').disabled = true;
+    G = await api.register(username, password);
+    await startGame();
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    document.getElementById('btn-register').disabled = false;
+  }
 });
 
 // Navigation
@@ -247,18 +274,30 @@ document.getElementById('em-cancel').addEventListener('click', () =>
   document.getElementById('equip-modal').classList.remove('open')
 );
 
+// ── Logout ───────────────────────────────────────────────────
+document.getElementById('btn-logout').addEventListener('click', async () => {
+  if (confirm('Wirklich ausloggen?')) await api.logout();
+});
+
 // Leaflet übernimmt Resize automatisch — kein manueller Canvas-Listener nötig
 
 // ============================================================
 // INIT — check for saved game, load sprites, then show start screen
 // ============================================================
 (async function init() {
-  await loadSprites();      // PNG-Sprites aus assets/sprites/
-  await loadGameImages();   // JPEG-Portraits, Gebäude, Hintergründe
+  await loadSprites();
+  await loadGameImages();
 
-  const saved = loadGame();
+  // Session-Cookie prüfen — bei gültigem Cookie direkt ins Spiel
+  const saved = await api.checkSession();
   if (saved) {
-    document.getElementById('btn-continue').style.display = 'block';
-    document.getElementById('name-input').value           = saved.player?.name || '';
+    G = saved;
+    await startGame();
+  } else {
+    // Login-Formular anzeigen
+    document.getElementById('session-loading').style.display = 'none';
+    document.getElementById('auth-form').style.display       = 'flex';
+    document.getElementById('auth-form').style.flexDirection = 'column';
+    document.getElementById('auth-form').style.gap           = '12px';
   }
 })();

@@ -186,7 +186,11 @@ function showTooltip(b, forceUpdate = false) {
   const ttBtn  = document.getElementById('tt-btn');
   const lockEl = document.getElementById('bi-lock');
 
-  if (b.owned) {
+  if (b.ownedByOther) {
+    status.style.borderLeftColor = '#5555ee'; status.style.color = '#9090ff';
+    status.textContent = `Besetzt von: ${b.ownerName || 'anderem Spieler'}`;
+    ttBtn.textContent  = 'Fremdes Revier'; ttBtn.disabled = true;
+  } else if (b.owned) {
     status.style.borderLeftColor = '#2ecc71'; status.style.color = '#2ecc71';
     status.textContent = 'Bereits unter deiner Kontrolle';
     ttBtn.textContent  = 'Bereits dein'; ttBtn.disabled = true;

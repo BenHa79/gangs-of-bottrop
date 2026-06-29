@@ -23,12 +23,56 @@ function loadGameImages() {
 
 function getBuildingStyle(b) {
   const isSelected = ttLocked && ttBuilding === b;
+  // Farben: gelb=ausgewählt, grün=meins, blau=fremd, rot=frei
+  if (isSelected)
+    return { color: '#ffe040', weight: 3, fillColor: '#ffe040', fillOpacity: 0.60 };
+  if (b.hovered && b.ownedByMe)
+    return { color: '#ffffff', weight: 2, fillColor: '#1ec858', fillOpacity: 0.50 };
+  if (b.hovered && b.ownedByOther)
+    return { color: '#ffffff', weight: 2, fillColor: '#5555ee', fillOpacity: 0.50 };
+  if (b.hovered)
+    return { color: '#ffffff', weight: 2, fillColor: '#c01818', fillOpacity: 0.50 };
+  if (b.ownedByMe)
+    return { color: '#1ec858', weight: 2, fillColor: '#1ec858', fillOpacity: 0.40 };
+  if (b.ownedByOther)
+    return { color: '#5555ee', weight: 2, fillColor: '#4444cc', fillOpacity: 0.35 };
+  return   { color: '#c01818', weight: 2, fillColor: '#c01818', fillOpacity: 0.40 };
+}
 
-  if (isSelected) return { color: '#ffe040', weight: 3,   fillColor: '#ffe040', fillOpacity: 0.60 };
-  if (b.hovered && b.owned)  return { color: '#ffffff', weight: 2, fillColor: '#1ec858', fillOpacity: 0.40 };
-  if (b.hovered && !b.owned) return { color: '#ffffff', weight: 2, fillColor: '#c01818', fillOpacity: 0.40 };
-  if (b.owned)    return { color: '#1ec858', weight: 2,   fillColor: '#1ec858', fillOpacity: 0.40 };
-  return                 { color: '#c01818', weight: 2,   fillColor: '#c01818', fillOpacity: 0.40 };
+// Gebäude-Besitz vom Server anwenden
+// serverBuildings: [{ osm_id, owner_id, owner_name }]
+// currentUserId: eigene user_id (aus G.userId)
+function applyBuildingOwnership(serverBuildings, currentUserId) {
+  const byOsmId = {};
+  for (const sb of serverBuildings) byOsmId[String(sb.osm_id)] = sb;
+
+  for (const b of buildings) {
+    const sb = byOsmId[b.osmId];
+    if (sb && sb.owner_id) {
+      b.ownedByMe    = (sb.owner_id === currentUserId);
+      b.ownedByOther = !b.ownedByMe;
+      b.ownerName    = sb.owner_name || '';
+    } else {
+      b.ownedByMe    = false;
+      b.ownedByOther = false;
+      b.ownerName    = '';
+    }
+    b.owned = b.ownedByMe;   // Rückwärtskompatibilität
+
+    // G.buildingStatus aktualisieren (für saveBuilding-Logik)
+    if (G?.buildingStatus) {
+      if (b.ownedByMe) G.buildingStatus[b.osmId] = true;
+      else             delete G.buildingStatus[b.osmId];
+    }
+  }
+  updateMapColors();
+}
+
+// Gebäude-Besitz periodisch vom Server neu laden (alle 30 Sek.)
+async function refreshBuildingsFromServer() {
+  if (!G) return;
+  const result = await api.fetchBuildings();
+  applyBuildingOwnership(result.buildings || [], G.userId);
 }
 
 // --------------- Karten-Farben aktualisieren ---------------
@@ -85,7 +129,10 @@ async function loadWohngebaeude() {
       label,
       building: t.building || 'residential',
       coords,
-      owned:    api.getBuilding(el.id),
+      owned:       false,   // wird von applyBuildingOwnership() gesetzt
+      ownedByMe:   false,
+      ownedByOther: false,
+      ownerName:   '',
       hovered:  false,
     });
   }
@@ -209,4 +256,11 @@ async function initMap() {
 
   // ── Wohngebäude-Polygone laden ───────────────────────────
   await loadWohngebaeude();
+
+  // ── Gebäude-Besitz vom Server laden ─────────────────────
+  const bldResult = await api.fetchBuildings();
+  applyBuildingOwnership(bldResult.buildings || [], G?.userId);
+
+  // ── Alle 30 Sek. Besitz-Status aktualisieren ─────────────
+  setInterval(refreshBuildingsFromServer, 30_000);
 }
