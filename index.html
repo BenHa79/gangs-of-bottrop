@@ -176,7 +176,7 @@
     <!-- Paper Doll: 3 Spalten -->
     <div id="paperdoll-area">
 
-      <!-- Links: Ausrüstung Kopf / Waffe / Körper / Extra -->
+      <!-- Links: Ausrüstung Kopf / Waffe / Körper / Hose / Extra -->
       <div class="pd-col-left">
         <div class="pd-section-label">Ausrüstung</div>
         <div class="pd-slot" data-slot="kopf">
@@ -196,7 +196,14 @@
         <div class="pd-slot" data-slot="körper">
           <div class="pd-slot-icon">🥼</div>
           <div class="pd-slot-info">
-            <div class="pd-slot-label">Körper</div>
+            <div class="pd-slot-label">Brust</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="hose">
+          <div class="pd-slot-icon">👖</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Hose</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
@@ -224,7 +231,7 @@
         </div>
       </div>
 
-      <!-- Rechts: Ausrüstung Hals / Hand / Füße -->
+      <!-- Rechts: Ausrüstung Hals / Ring / Schuhe / Handschuhe / Gürtel -->
       <div class="pd-col-right">
         <div class="pd-section-label">&nbsp;</div>
         <div class="pd-slot" data-slot="hals">
@@ -237,14 +244,28 @@
         <div class="pd-slot" data-slot="hand">
           <div class="pd-slot-icon">💍</div>
           <div class="pd-slot-info">
-            <div class="pd-slot-label">Hand</div>
+            <div class="pd-slot-label">Ring</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
         <div class="pd-slot" data-slot="füße">
-          <div class="pd-slot-icon">👢</div>
+          <div class="pd-slot-icon">👟</div>
           <div class="pd-slot-info">
-            <div class="pd-slot-label">Füße</div>
+            <div class="pd-slot-label">Schuhe</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="handschuhe">
+          <div class="pd-slot-icon">🧤</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Handschuhe</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="gürtel">
+          <div class="pd-slot-icon">⛓️</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Gürtel</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
@@ -375,6 +396,7 @@
       </div>
       <div class="einsch-text" id="einsch-text">...</div>
       <div class="einsch-result" id="einsch-result"></div>
+      <div id="einsch-drop" style="display:none;"></div>
       <button class="btn-gold einsch-btn" id="btn-einsch-close">Weitermachen</button>
     </div>
 

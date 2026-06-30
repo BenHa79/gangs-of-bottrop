@@ -13,7 +13,7 @@ function newGame(name) {
       money: 500,
       energy: 100, maxEnergy: 100, energyLastReset: Date.now(),
       honor: 0,
-      stats:      { str: 5, end: 50, lck: 5, inf: 1, rep: 0 },
+      stats:      { str: 5, end: 50, ges: 5, lck: 5, inf: 1, rep: 0, cha: 1 },
       statLevels: { str: 0, end: 0, lck: 0, inf: 0 },
       equip: {}, inventory: [],
     },
@@ -102,11 +102,14 @@ async function startGame() {
   document.getElementById('game-screen').classList.add('active');
 
   // Patch old saves
-  if (!G.player.statLevels)              G.player.statLevels = { str:0, end:0, lck:0, inf:0 };
-  if (G.player.stats.end === undefined)  G.player.stats.end  = 50;
-  if (G.player.honor === undefined)      G.player.honor      = 0;
-  if (!G.marktTimer)                     G.marktTimer = Date.now() + 86_400_000;
-  if (!G.marktSeed)                      G.marktSeed  = Math.floor(Math.random() * 10000);
+  if (!G.player.statLevels)                 G.player.statLevels = { str:0, end:0, lck:0, inf:0 };
+  if (G.player.stats.end === undefined)     G.player.stats.end  = 50;
+  if (G.player.stats.ges === undefined)     G.player.stats.ges  = 5;
+  if (G.player.stats.cha === undefined)     G.player.stats.cha  = 1;
+  if (G.player.honor === undefined)         G.player.honor      = 0;
+  if (!G.player.inventory)                  G.player.inventory  = [];
+  if (!G.marktTimer)                        G.marktTimer = Date.now() + 86_400_000;
+  if (!G.marktSeed)                         G.marktSeed  = Math.floor(Math.random() * 10000);
 
   // Migration: altes G.buildings-Format ignorieren (kein OSM-ID-Mapping möglich)
   if (!G.buildingStatus) G.buildingStatus = {};
@@ -247,6 +250,34 @@ document.getElementById('btn-einsch-close').addEventListener('click', () => {
   checkLevelUp();
   const label = b.label || b.data.type;
   addLog(`${label} eingeschüchtert! +${formatMoney(money)} +${xp}XP +${honor} Ehre`, 'good');
+
+  // ── Item-Drop ───────────────────────────────────────────────
+  const dropChance = Math.min(0.75, 0.15 + (G.player.stats.lck || 0) * 0.005);
+  const dropEl = document.getElementById('einsch-drop');
+  if (Math.random() < dropChance) {
+    const pool = typeof ITEMS_TIER1 !== 'undefined' ? ITEMS_TIER1 : (ITEMS && ITEMS.tier1 ? ITEMS.tier1 : []);
+    const item = pool[Math.floor(Math.random() * pool.length)];
+    if (item) {
+      if (!G.player.inventory) G.player.inventory = [];
+      G.player.inventory.push({ ...item });
+      api.saveInventoryItem({ ...item });
+      addLog(`🎁 Item gefunden: ${item.icon} ${item.name}`, 'good');
+      if (dropEl) {
+        dropEl.innerHTML = `<div class="drop-found">
+          <span class="drop-icon">${item.icon}</span>
+          <div class="drop-info">
+            <div class="drop-name">${item.name}</div>
+            <div class="drop-stat">${item.stat}</div>
+            <div class="drop-humor">${item.humor}</div>
+          </div>
+        </div>`;
+        dropEl.style.display = 'block';
+      }
+    }
+  } else {
+    if (dropEl) dropEl.style.display = 'none';
+  }
+
   document.getElementById('einschuechterung-screen').classList.remove('open');
   ttLocked = false; ttBuilding = null; hideTooltip();
   saveGame(); updateHUD(); drawCity();

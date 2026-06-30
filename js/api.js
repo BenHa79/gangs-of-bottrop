@@ -124,4 +124,13 @@ const api = {
     if (!G?.buildingStatus) return [];
     return Object.keys(G.buildingStatus).filter(k => G.buildingStatus[k] === true);
   },
+
+  // ── Item ins Inventar speichern (fire-and-forget) ────────────
+  saveInventoryItem(item) {
+    fetch('/api/inventory', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(item),
+    }).catch(e => console.error('[api.saveInventoryItem]', e));
+  },
 };

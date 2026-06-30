@@ -403,3 +403,28 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* ── Item Drop (Einschüchterung) ── */
+#einsch-drop         { margin: 0; }
+.drop-found          { display: flex; align-items: flex-start; gap: 14px; background: rgba(201,151,58,.1); border: 1px solid var(--gold); padding: 12px 14px; border-radius: 2px; animation: drop-appear .4s ease-out; }
+@keyframes drop-appear { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
+.drop-icon           { font-size: 36px; line-height: 1; flex-shrink: 0; }
+.drop-info           { flex: 1; }
+.drop-name           { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--gold); margin-bottom: 2px; }
+.drop-stat           { font-size: 11px; color: var(--green2); font-weight: 600; margin-bottom: 4px; }
+.drop-humor          { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.5; }
+
+/* ── Inventar-Item-Karte (HQ) ── */
+.inv-item            { display: flex; align-items: flex-start; gap: 12px; background: var(--paper); border: 1px solid var(--border); padding: 10px 12px; cursor: pointer; transition: border-color .15s; }
+.inv-item:hover      { border-color: var(--gold); }
+.inv-item .ii-icon   { font-size: 28px; line-height: 1; flex-shrink: 0; }
+.inv-item .ii-body   { flex: 1; }
+.inv-item .ii-name   { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--text); margin-bottom: 2px; }
+.inv-item .ii-stat   { font-size: 10px; color: var(--green2); font-weight: 600; margin-bottom: 3px; }
+.inv-item .ii-humor  { font-size: 10px; color: var(--muted); font-style: italic; line-height: 1.45; }
+.inv-item .ii-slot   { font-size: 9px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+.inv-empty           { font-size: 11px; color: var(--muted); text-align: center; padding: 20px; }
+
+/* ── Paper Doll neue Slots (kompakter bei vielen Slots) ── */
+.pd-col-left .pd-slot,
+.pd-col-right .pd-slot { padding: 7px 10px; }

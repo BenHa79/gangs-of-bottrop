@@ -108,20 +108,23 @@ function unequipSlot(slotId) {
 function renderInventory() {
   const list = document.getElementById('inventory-list');
   list.innerHTML = '';
-  if (!G.player.inventory.length) {
-    list.innerHTML = '<div class="inv-empty">Noch keine Items.</div>';
+  if (!G.player.inventory || !G.player.inventory.length) {
+    list.innerHTML = '<div class="inv-empty">Noch keine Items gefunden.<br>Einschüchtern für eine Chance auf Drops!</div>';
     return;
   }
   G.player.inventory.forEach((item, i) => {
+    const slotDef  = EQUIP_SLOTS.find(s => s.id === item.slot);
+    const slotLabel = slotDef ? slotDef.label : item.slot;
     const el = document.createElement('div');
     el.className = 'inv-item';
     el.innerHTML = `
-      <div class="i-icon">${item.icon}</div>
-      <div class="i-info">
-        <div class="i-name">${item.name}</div>
-        <div class="i-stat">${item.humor || item.stat || ''}</div>
-      </div>
-      <div class="i-tier tier-${item.tier}">T${item.tier}</div>`;
+      <div class="ii-icon">${item.icon}</div>
+      <div class="ii-body">
+        <div class="ii-name">${item.name}</div>
+        <div class="ii-stat">${item.stat || ''}</div>
+        <div class="ii-humor">${item.humor || ''}</div>
+        <div class="ii-slot">${slotLabel} · Tier ${item.tier}</div>
+      </div>`;
     el.addEventListener('click', () => openEquipModal(item, i));
     list.appendChild(el);
   });
@@ -131,14 +134,21 @@ function renderInventory() {
 
 function openEquipModal(item, idx) {
   selInv = { item, idx };
+  const slotDef  = EQUIP_SLOTS.find(s => s.id === item.slot);
+  const slotLabel = slotDef ? slotDef.label : item.slot;
   document.getElementById('em-title').textContent = item.name + ' anlegen';
   document.getElementById('em-item').innerHTML = `
-    <div class="d-icon">${item.icon}</div>
-    <div><div class="d-name">${item.name}</div><div class="d-stat">${item.humor || item.stat || ''}</div></div>`;
+    <div class="ii-icon" style="font-size:32px;">${item.icon}</div>
+    <div class="ii-body">
+      <div class="ii-name">${item.name}</div>
+      <div class="ii-stat">${item.stat || ''}</div>
+      <div class="ii-humor">${item.humor || ''}</div>
+      <div class="ii-slot">${slotLabel} · Tier ${item.tier}</div>
+    </div>`;
   const cur = G.player.equip[item.slot];
   document.getElementById('em-desc').textContent = cur
-    ? `Ersetzt: ${cur.name}`
-    : `Slot: ${item.slot} – leer`;
+    ? `Ersetzt: ${cur.icon} ${cur.name}`
+    : `${slotLabel}-Slot ist leer`;
   document.getElementById('equip-modal').classList.add('open');
 }
 

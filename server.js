@@ -57,6 +57,12 @@ async function requireAuth(req, res, next) {
 async function loadPlayerData(userId) {
   const { rows: [u] } = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
   if (!u) return null;
+  // Inventar aus separater Tabelle laden
+  const { rows: invRows } = await pool.query(
+    'SELECT item_data FROM inventory WHERE user_id = $1 AND equipped_slot IS NULL ORDER BY id ASC',
+    [userId]
+  );
+  const inventory = invRows.map(r => r.item_data || {});
   return {
     version:  4,
     userId:   u.id,
@@ -72,13 +78,15 @@ async function loadPlayerData(userId) {
       stats: {
         str: u.staerke,
         end: u.ausdauer,
+        ges: u.geschicklichkeit || 5,
         lck: u.glueck,
         inf: u.einfluss,
         rep: u.respekt,
+        cha: u.charisma || 1,
       },
       statLevels: u.stat_levels || { str: 0, end: 0, lck: 0, inf: 0 },
       equip:      u.equip      || {},
-      inventory:  [],
+      inventory,
     },
     buildingStatus: {},
     mission:    u.mission    || null,
@@ -97,17 +105,17 @@ async function savePlayerData(userId, G) {
       level = $1, xp = $2, money = $3,
       energy = $4, max_energy = $5, energy_last_reset = $6,
       honor = $7,
-      staerke = $8, ausdauer = $9, glueck = $10, einfluss = $11, respekt = $12,
-      stat_levels = $13, equip = $14,
-      mission = $15,
-      sgeld_timer = $16, markt_timer = $17, markt_seed = $18,
-      log = $19, last_login = NOW()
-    WHERE id = $20
+      staerke = $8, ausdauer = $9, geschicklichkeit = $10, glueck = $11, einfluss = $12, respekt = $13, charisma = $14,
+      stat_levels = $15, equip = $16,
+      mission = $17,
+      sgeld_timer = $18, markt_timer = $19, markt_seed = $20,
+      log = $21, last_login = NOW()
+    WHERE id = $22
   `, [
     p.level, p.xp, p.money,
     p.energy, p.maxEnergy, String(p.energyLastReset || Date.now()),
     p.honor,
-    p.stats.str, p.stats.end, p.stats.lck, p.stats.inf, p.stats.rep,
+    p.stats.str, p.stats.end, p.stats.ges || 5, p.stats.lck, p.stats.inf, p.stats.rep, p.stats.cha || 1,
     JSON.stringify(p.statLevels || {}),
     JSON.stringify(p.equip      || {}),
     JSON.stringify(G.mission    || null),
@@ -298,6 +306,44 @@ app.delete('/api/buildings/:osmId', requireAuth, async (req, res) => {
     await pool.query(
       'DELETE FROM buildings WHERE osm_id = $1 AND owner_id = $2',
       [req.params.osmId, req.userId]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// INVENTAR ROUTES
+// ════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════
+// INVENTAR ROUTES
+// ════════════════════════════════════════════════════════════
+
+// POST /api/inventory  — neues Item hinzufügen
+app.post('/api/inventory', requireAuth, async (req, res) => {
+  const item = req.body;
+  if (!item || !item.name) return res.status(400).json({ error: 'Kein Item' });
+  try {
+    const itemId = item.slot + '_' + item.name.toLowerCase().replace(/\s+/g, '_').slice(0, 40);
+    await pool.query(
+      'INSERT INTO inventory (user_id, item_id, item_data, equipped_slot) VALUES ($1, $2, $3, NULL)',
+      [req.userId, itemId, JSON.stringify(item)]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[inventory]', e.message);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// DELETE /api/inventory/:id  — Item löschen
+app.delete('/api/inventory/:id', requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM inventory WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.userId]
     );
     res.json({ ok: true });
   } catch (e) {
