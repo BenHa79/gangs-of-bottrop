@@ -195,9 +195,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 #hq-header h2       { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold); }
 
 /* Paper Doll — 3 Spalten */
-#paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 20px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
+#paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 6px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
 .pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 5px; width: 68px; flex-shrink: 0; }
-.pd-col-center      { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pd-col-center      { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pd-section-label   { font-size: 8px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; height: 14px; }
 
 /* Charakter-Figur */
