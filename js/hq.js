@@ -18,9 +18,7 @@ function renderStatUpgradeGrid() {
   for (const up of STAT_UPGRADES) {
     const cost      = statUpgradeCost(up.key);
     const canAfford = G.player.money >= cost;
-    const curVal    = up.key === 'end'
-      ? G.player.stats.end
-      : (G.player.stats[up.key] || 0);
+    const curVal    = G.player.stats[up.key] ?? 0;
 
     const row = document.createElement('div');
     row.className = 'stat-upgrade-row';
@@ -44,6 +42,8 @@ function renderStatUpgradeGrid() {
       else if (up.key === 'end') G.player.stats.end += 15;
       else if (up.key === 'lck') G.player.stats.lck += 1;
       else if (up.key === 'inf') G.player.stats.inf += 1;
+      else if (up.key === 'ges') G.player.stats.ges  = (G.player.stats.ges  || 0) + 1;
+      else if (up.key === 'cha') G.player.stats.cha  = (G.player.stats.cha  || 0) + 1;
       addLog(`💪 ${up.label} verbessert!`, 'good');
       saveGame(); updateHUD(); openHQ();
       showToast(`${up.icon} ${up.label} verbessert!`);

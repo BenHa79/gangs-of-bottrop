@@ -313,6 +313,29 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
   if (confirm('Wirklich ausloggen?')) await api.logout();
 });
 
+// ── [DEBUG] Account zurücksetzen ─────────────────────────────
+document.getElementById('btn-reset-account').addEventListener('click', async () => {
+  const ok = confirm(
+    '⚠️ Account zurücksetzen?\n\n' +
+    'Das löscht deinen kompletten Fortschritt:\n' +
+    '• Level, XP, Geld, Stats\n' +
+    '• Gesamtes Inventar\n' +
+    '• Alle eingenommenen Gebäude\n\n' +
+    'Andere Spieler sind NICHT betroffen.\n\n' +
+    'Bist du sicher?'
+  );
+  if (!ok) return;
+  try {
+    const res = await fetch('/api/reset', { method: 'POST' });
+    if (!res.ok) throw new Error('Reset fehlgeschlagen');
+    addLog('🔄 Account zurückgesetzt.', 'bad');
+    showToast('Account zurückgesetzt — neu laden…');
+    setTimeout(() => location.reload(), 1500);
+  } catch (e) {
+    showToast('Fehler: ' + e.message);
+  }
+});
+
 // Leaflet übernimmt Resize automatisch — kein manueller Canvas-Listener nötig
 
 // ============================================================

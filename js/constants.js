@@ -14,10 +14,12 @@ const RANKS = [
 const XP_TABLE = [0,100,250,500,900,1500,2400,3700,5500,8000,12000,17000,24000,33000,45000];
 
 const STAT_UPGRADES = [
-  { key:'str', label:'Stärke',   icon:'💪', desc:'Mehr Schaden im Kampf', baseCost:200, costMult:1.5 },
-  { key:'end', label:'Ausdauer', icon:'🛡️', desc:'Mehr HP im Kampf',      baseCost:200, costMult:1.5 },
-  { key:'lck', label:'Glück',    icon:'🍀', desc:'Bessere Item-Drops',    baseCost:150, costMult:1.4 },
-  { key:'inf', label:'Einfluss', icon:'🎩', desc:'+5% Schutzgeld',        baseCost:300, costMult:1.6 },
+  { key:'str', label:'Stärke',          icon:'💪', desc:'Mehr Schaden im Kampf',                        baseCost:200, costMult:1.5  },
+  { key:'end', label:'Ausdauer',        icon:'🛡️', desc:'Mehr HP im Kampf',                             baseCost:200, costMult:1.5  },
+  { key:'lck', label:'Glück',           icon:'🍀', desc:'Bessere Item-Drops',                           baseCost:150, costMult:1.4  },
+  { key:'inf', label:'Einfluss',        icon:'🎩', desc:'+5% Schutzgeld',                               baseCost:300, costMult:1.6  },
+  { key:'ges', label:'Geschicklichkeit',icon:'🤸', desc:'Ausweichen + schnellere Reisezeit',             baseCost:180, costMult:1.45 },
+  { key:'cha', label:'Charisma',        icon:'🎭', desc:'Bessere Einschüchterung + Schwarzmarkt-Rabatt',baseCost:250, costMult:1.5  },
 ];
 
 const BUILDING_TYPES = [

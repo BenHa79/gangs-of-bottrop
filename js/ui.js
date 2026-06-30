@@ -199,7 +199,8 @@ function showTooltip(b, forceUpdate = false) {
   const osmEl = document.getElementById('bi-osm');
   if (osmEl) osmEl.textContent = b.osmId ? 'OSM #' + b.osmId : '';
 
-  document.getElementById('bi-income').textContent   = formatMoney(b.data.baseIncome) + '/Tag';
+  const infBonus = G ? (1 + (G.player.stats.inf || 0) * 0.05) : 1;
+  document.getElementById('bi-income').textContent   = formatMoney(Math.floor(b.data.baseIncome * infBonus)) + '/Tag';
   document.getElementById('bi-strength').textContent = 'Einschüchterung';
   document.getElementById('bi-energy').textContent   = b.data.energyCost + ' Energie';
   document.getElementById('bi-time').textContent     = formatTime(b.data.travelBase);

@@ -351,6 +351,42 @@ app.delete('/api/inventory/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ════════════════════════════════════════════════════════════
+// DEBUG / RESET
+// ════════════════════════════════════════════════════════════
+
+// POST /api/reset  — Account auf Startwerte zurücksetzen (nur eigener Account)
+app.post('/api/reset', requireAuth, async (req, res) => {
+  const uid = req.userId;
+  const now = Date.now();
+  try {
+    await pool.query(`
+      UPDATE users SET
+        level = 1, xp = 0, money = 500,
+        energy = 100, max_energy = 100, energy_last_reset = $1,
+        honor = 0,
+        staerke = 5, ausdauer = 50, geschicklichkeit = 5,
+        glueck = 5, einfluss = 1, respekt = 0, charisma = 1,
+        stat_levels = '{"str":0,"end":0,"lck":0,"inf":0}',
+        equip = '{}', mission = 'null', log = '[]',
+        sgeld_timer = $2, markt_timer = $2, markt_seed = $3,
+        last_login = NOW()
+      WHERE id = $4
+    `, [String(now), String(now + 86_400_000), Math.floor(Math.random() * 10000), uid]);
+
+    // Inventar leeren
+    await pool.query('DELETE FROM inventory WHERE user_id = $1', [uid]);
+    // Eigene Gebäude freigeben
+    await pool.query('DELETE FROM buildings WHERE owner_id = $1', [uid]);
+
+    console.log(`[reset] User ${uid} wurde zurückgesetzt`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[reset]', e.message);
+    res.status(500).json({ error: 'Reset fehlgeschlagen' });
+  }
+});
+
 // ── Wildcard → SPA ────────────────────────────────────────────
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
