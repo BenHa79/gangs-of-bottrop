@@ -217,7 +217,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 .pd-slot:not(.filled) { background-image: url('../assets/images/ui/slot-frame-empty.jpg'); background-size: cover; background-position: center; border: none; }
 .pd-slot.filled     { border-color: rgba(201,151,58,.5); cursor: pointer; }
 .pd-slot.filled:hover { border-color: var(--gold); background: #1c1a12; }
-.pd-slot-icon       { font-size: 28px; line-height: 1; text-align: center; position: relative; z-index: 1; }
+.pd-slot-icon       { font-size: 22px; line-height: 1; text-align: center; position: relative; z-index: 1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 .pd-slot-info       { display: none; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: rgba(14,11,8,.96); border: 1px solid var(--gold); padding: 5px 9px; white-space: nowrap; z-index: 100; pointer-events: none; }
 .pd-slot:hover .pd-slot-info { display: block; }
 .pd-slot-label      { font-size: 8px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
