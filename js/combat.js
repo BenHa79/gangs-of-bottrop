@@ -70,6 +70,9 @@ function openEinschuechterung(b) {
 // --------------- Kampf (combat) ---------------
 
 function openKampf(b) {
+  isProcessing = true;    // checkMission() sperren — verhindert Mehrfach-Öffnung
+  G.mission    = null;    // Mission sofort clearen
+  saveGame();
   const nd  = NPC_DATA[b.data.type] || NPC_DATA['Kiosk'];
   const npc = nd.npcs[Math.floor(Math.random() * nd.npcs.length)];
   kampfState = {

@@ -75,13 +75,14 @@ function checkMission() {
 }
 
 function arriveAtBuilding() {
+  isProcessing = true;   // Sofort sperren – verhindert dass updateMissionBar() den Ladescreen wieder einblendet
   const b = buildings.find(x => x.osmId === G.mission.buildingOsmId)
          || buildings[G.mission.buildingIdx];   // Fallback: alter Spielstand
-  if (!b) { G.mission = null; return; }
+  if (!b) { G.mission = null; isProcessing = false; return; }
   // Ladebildschirm ausblenden bevor Kampf/Einschüchterung öffnet
   const lade = document.getElementById('ladescreen');
   if (lade) lade.classList.remove('active');
-  updateMissionBar();
+  // KEIN updateMissionBar() hier – G.mission ist noch gesetzt, würde ladescreen sofort wieder zeigen
   if (b.data.isResidential) openEinschuechterung(b);
   else                       openKampf(b);
 }
@@ -228,6 +229,7 @@ document.getElementById('btn-start-kampf').addEventListener('click', () => {
 
 // Kampf – result close
 document.getElementById('btn-er-close').addEventListener('click', () => {
+  isProcessing = false;   // Kampf-Screen geschlossen — checkMission() wieder freigeben
   document.getElementById('kampf-screen').classList.remove('open');
   document.getElementById('kampf-log').innerHTML = '';
   kampfState = null;
