@@ -196,7 +196,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 
 /* Paper Doll — 3 Spalten */
 #paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 20px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
-.pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 8px; width: 155px; flex-shrink: 0; }
+.pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 5px; width: 68px; flex-shrink: 0; }
 .pd-col-center      { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pd-section-label   { font-size: 8px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; height: 14px; }
 
@@ -212,14 +212,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 .pd-xp-row .xp-bar-bg { height: 8px; }
 .xp-text            { font-size: 9px; color: var(--muted); margin-top: 3px; text-align: center; }
 
-/* Equip-Slots */
-.pd-slot            { background: var(--dim); border: 1px solid var(--border); padding: 8px 10px; display: flex; align-items: center; gap: 9px; transition: border-color .15s; min-height: 52px; cursor: default; }
+/* Equip-Slots — quadratisch */
+.pd-slot            { width: 68px; height: 68px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: default; border: 1px solid var(--border); background: var(--dim); transition: border-color .15s; overflow: visible; }
+.pd-slot:not(.filled) { background-image: url('../assets/images/ui/slot-frame-empty.jpg'); background-size: cover; background-position: center; border: none; }
 .pd-slot.filled     { border-color: rgba(201,151,58,.5); cursor: pointer; }
 .pd-slot.filled:hover { border-color: var(--gold); background: #1c1a12; }
-.pd-slot-icon       { font-size: 20px; flex-shrink: 0; width: 22px; text-align: center; }
-.pd-slot-info       { flex: 1; min-width: 0; }
+.pd-slot-icon       { font-size: 28px; line-height: 1; text-align: center; position: relative; z-index: 1; }
+.pd-slot-info       { display: none; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: rgba(14,11,8,.96); border: 1px solid var(--gold); padding: 5px 9px; white-space: nowrap; z-index: 100; pointer-events: none; }
+.pd-slot:hover .pd-slot-info { display: block; }
 .pd-slot-label      { font-size: 8px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
-.pd-slot-name       { font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pd-slot-name       { font-size: 10px; color: var(--text); margin-top: 2px; }
 .pd-slot-bonus      { font-size: 9px; color: var(--gold); margin-top: 1px; }
 
 /* Unterer Bereich */
@@ -427,9 +429,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 .inv-item .ii-slot   { font-size: 9px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
 .inv-empty           { font-size: 11px; color: var(--muted); text-align: center; padding: 20px; }
 
-/* ── Paper Doll neue Slots (kompakter bei vielen Slots) ── */
-.pd-col-left .pd-slot,
-.pd-col-right .pd-slot { padding: 7px 10px; }
+/* ── Paper Doll neue Slots (quadratisch, kein padding-override nötig) ── */
 
 /* ── Ladebildschirm (Reise-Overlay) ── */
 #ladescreen              { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; overflow: hidden; background: #080604; }
