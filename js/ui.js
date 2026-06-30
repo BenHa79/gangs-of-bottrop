@@ -84,17 +84,39 @@ function renderLog() {
 
 function updateMissionBar() {
   const mc = document.getElementById('mission-content');
+  const lade = document.getElementById('ladescreen');
+
   if (!G?.mission) {
     mc.innerHTML = '<div style="font-size:11px;color:var(--muted);">Kein aktiver Auftrag</div>';
+    if (lade) lade.classList.remove('active');
     return;
   }
-  const m = G.mission;
+
+  const m         = G.mission;
   const remaining = Math.max(0, m.endsAt - Date.now());
   const progress  = 1 - remaining / (m.totalDuration * 1000);
+  const pct       = Math.min(100, Math.round(progress * 100));
+
+  // Sidebar mini-bar
   mc.innerHTML = `
     <div style="font-size:11px;color:var(--text);">${m.buildingIcon} ${m.buildingName}</div>
     <div class="mission-timer">${formatTime(remaining / 1000)}</div>
-    <div class="mission-progress-bg"><div class="mission-progress-fill" style="width:${progress * 100}%"></div></div>`;
+    <div class="mission-progress-bg"><div class="mission-progress-fill" style="width:${pct}%"></div></div>`;
+
+  // Ladebildschirm-Overlay
+  if (lade && !isProcessing) {
+    lade.classList.add('active');
+    const iconEl = document.getElementById('lade-icon');
+    const nameEl = document.getElementById('lade-name');
+    const subEl  = document.getElementById('lade-sub');
+    const fillEl = document.getElementById('lade-bar-fill');
+    const pctEl  = document.getElementById('lade-bar-pct');
+    if (iconEl) iconEl.textContent = m.buildingIcon || '🏢';
+    if (nameEl) nameEl.textContent = m.buildingName || '…';
+    if (subEl)  subEl.textContent  = `Unterwegs zu ${m.buildingName}…`;
+    if (fillEl) fillEl.style.width = pct + '%';
+    if (pctEl)  pctEl.textContent  = pct + '%';
+  }
 }
 
 // --------------- Energy regen ---------------
@@ -195,23 +217,29 @@ function showTooltip(b, forceUpdate = false) {
     status.textContent = 'Bereits unter deiner Kontrolle';
     ttBtn.textContent  = 'Bereits dein'; ttBtn.disabled = true;
   } else if (G?.mission) {
-    status.style.borderLeftColor = '#c9973a'; status.style.color = '#c9973a';
-    status.textContent = 'Du bist gerade auf Tour';
-    ttBtn.textContent  = 'Auftrag läuft…'; ttBtn.disabled = true;
+    status.style.borderLeftColor = 'var(--border)'; status.style.color = 'var(--muted)';
+    status.textContent = '⏳ Auftrag läuft – warte auf Rückkehr';
+    ttBtn.textContent  = 'Beschäftigt'; ttBtn.disabled = true;
   } else {
-    const c = canTake(b);
-    status.style.borderLeftColor = c.ok ? '#c9973a' : '#8b1a1a';
-    status.style.color           = c.ok ? '#c9973a' : '#8b1a1a';
-    status.textContent           = c.reason;
-    ttBtn.textContent            = b.data.isResidential ? 'Einschüchtern' : 'Einnehmen';
-    ttBtn.disabled               = !c.ok;
+    const check = canTake(b);
+    status.style.borderLeftColor = check.ok ? 'var(--green2)' : 'var(--red2)';
+    status.style.color           = check.ok ? 'var(--green2)' : 'var(--red2)';
+    status.textContent = check.reason;
+    ttBtn.textContent  = 'Einnehmen';
+    ttBtn.disabled     = !check.ok;
   }
-  if (lockEl) lockEl.textContent = ttLocked ? '🔒 Gesperrt – erneut klicken zum Lösen' : '🔓 Klicken zum Sperren';
+
+  if (lockEl) lockEl.textContent = ttLocked ? '🔒 Gebäude gesperrt' : '🔓 Klicken zum Sperren';
 }
 
 function hideTooltip() {
-  if (ttLocked) return;
-  document.getElementById('bi-empty').style.display   = 'block';
   document.getElementById('bi-content').style.display = 'none';
-  ttBuilding = null;
+  document.getElementById('bi-empty').style.display   = 'block';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
 }

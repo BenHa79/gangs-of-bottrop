@@ -310,14 +310,38 @@
 
 </div><!-- /#game-screen -->
 
+<!-- ── LADEBILDSCHIRM (Reise-Overlay) ── -->
+<div id="ladescreen">
+  <img class="lade-bg" src="assets/images/backgrounds/ladescreen.jpeg" alt="">
+  <div class="lade-overlay"></div>
+  <div class="lade-content">
+    <div class="lade-icon" id="lade-icon">🏢</div>
+    <div class="lade-name" id="lade-name">Unterwegs…</div>
+    <div class="lade-sub" id="lade-sub">Unterwegs zu…</div>
+    <div class="lade-bar-wrap">
+      <div class="lade-bar-bg">
+        <div class="lade-bar-fill" id="lade-bar-fill" style="width:0%"></div>
+      </div>
+      <div class="lade-bar-pct" id="lade-bar-pct">0%</div>
+    </div>
+    <div class="lade-pulse">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
 <!-- ── KAMPF SCREEN ── -->
 <div id="kampf-screen">
   <div id="phase-ankunft">
     <div class="ankunft-scene">
       <div class="ankunft-left">
-        <div class="ankunft-building-art" id="ka-art">🏪</div>
-        <div class="ankunft-building-name" id="ka-name">-</div>
-        <div class="ankunft-building-desc" id="ka-desc">-</div>
+        <img class="ankunft-bg-img" src="assets/images/backgrounds/kampf_strasse.jpeg" alt="">
+        <div class="ankunft-bg-overlay"></div>
+        <div class="ankunft-left-content">
+          <div class="ankunft-building-art" id="ka-art">🏪</div>
+          <div class="ankunft-building-name" id="ka-name">-</div>
+          <div class="ankunft-building-desc" id="ka-desc">-</div>
+        </div>
       </div>
       <div class="ankunft-right">
         <div class="npc-portrait" id="ka-portrait">👨</div>

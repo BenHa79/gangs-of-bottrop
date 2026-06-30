@@ -78,6 +78,9 @@ function arriveAtBuilding() {
   const b = buildings.find(x => x.osmId === G.mission.buildingOsmId)
          || buildings[G.mission.buildingIdx];   // Fallback: alter Spielstand
   if (!b) { G.mission = null; return; }
+  // Ladebildschirm ausblenden bevor Kampf/Einschüchterung öffnet
+  const lade = document.getElementById('ladescreen');
+  if (lade) lade.classList.remove('active');
   updateMissionBar();
   if (b.data.isResidential) openEinschuechterung(b);
   else                       openKampf(b);
@@ -326,6 +329,7 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
     await startGame();
   } else {
     // Login-Formular anzeigen
+    document.getElementById('session-loading').style.display = 'none';
     document.getElementById('session-loading').style.display = 'none';
     document.getElementById('auth-form').style.display       = 'flex';
     document.getElementById('auth-form').style.flexDirection = 'column';

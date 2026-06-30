@@ -43,20 +43,19 @@ function openEinschuechterung(b) {
     ? 'Wohngebäude \u00b7 ' + b.building
     : 'Wohngebäude';
 
-  // Portrait: echtes Bild für bekannte NPCs, sonst Emoji
+  // Portrait: spezifisches Bild für bekannte NPCs, anwohner_gruppe für alle anderen
   const portraitImg   = document.getElementById('einsch-portrait-img');
   const portraitEmoji = document.getElementById('einsch-portrait');
   const NPC_PORTRAITS = {
     'Waldemar K.': 'assets/images/npcs/waldemar.jpeg',
     'Herbert M.':  'assets/images/npcs/herbert.jpeg',
   };
-  const imgSrc = NPC_PORTRAITS[scene.name];
-  if (imgSrc && portraitImg) {
+  const imgSrc = NPC_PORTRAITS[scene.name] || 'assets/images/npcs/anwohner_gruppe.jpeg';
+  if (portraitImg) {
     portraitImg.src = imgSrc;
     portraitImg.style.display = 'block';
-    portraitEmoji.style.display = 'none';
-  } else {
-    if (portraitImg) portraitImg.style.display = 'none';
+    if (portraitEmoji) portraitEmoji.style.display = 'none';
+  } else if (portraitEmoji) {
     portraitEmoji.style.display = 'block';
     portraitEmoji.textContent = scene.portrait;
   }
