@@ -195,7 +195,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 #hq-header h2       { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold); }
 
 /* Paper Doll — 3 Spalten */
-#paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 20px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 20px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
 .pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 8px; width: 155px; flex-shrink: 0; }
 .pd-col-center      { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pd-section-label   { font-size: 8px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; height: 14px; }
@@ -223,7 +223,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 .pd-slot-bonus      { font-size: 9px; color: var(--gold); margin-top: 1px; }
 
 /* Unterer Bereich */
-#hq-bottom          { display: flex; flex: 1; overflow: hidden; }
+#hq-bottom          { display: flex; flex: 1; overflow: hidden; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
 #stats-panel        { width: 340px; padding: 14px 16px; border-right: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; }
 #inv-panel-hq       { flex: 1; padding: 14px 16px; overflow-y: auto; }
 .panel-title        { font-size: 9px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
