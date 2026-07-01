@@ -73,14 +73,30 @@
     <div class="topbar-sep"></div>
     <div id="player-name-display"></div>
     <div class="topbar-sep"></div>
-    <button class="nav-btn active" id="btn-map-view">Stadt</button>
-    <button class="nav-btn" id="btn-hq-view">HQ</button>
-    <button class="nav-btn" id="btn-markt-view">🚉 Markt</button>
     <button class="nav-btn" id="btn-logout" title="Ausloggen" style="margin-left:4px;">⏏</button>
   </div>
 
   <!-- Main area -->
   <div id="main-content">
+
+    <!-- Seitliche Icon-Navigation (S&F-Stil) -->
+    <div id="nav-sidebar">
+      <button class="nav-icon-btn active" id="btn-map-view" title="Stadt">
+        <span class="nib-icon">🗺️</span><span class="nib-label">Stadt</span>
+      </button>
+      <button class="nav-icon-btn" id="btn-hq-view" title="Hauptquartier">
+        <span class="nib-icon">⚜</span><span class="nib-label">HQ</span>
+      </button>
+      <button class="nav-icon-btn" id="btn-markt-view" title="Schwarzmarkt">
+        <span class="nib-icon">🚉</span><span class="nib-label">Markt</span>
+      </button>
+      <button class="nav-icon-btn disabled" disabled title="Bald verfügbar">
+        <span class="nib-icon">👊</span><span class="nib-label">Trupp</span>
+      </button>
+      <button class="nav-icon-btn disabled" disabled title="Bald verfügbar">
+        <span class="nib-icon">👪</span><span class="nib-label">Familie</span>
+      </button>
+    </div><!-- /#nav-sidebar -->
 
     <!-- City Map -->
     <div id="map-view">
@@ -176,19 +192,12 @@
     <!-- Paper Doll: 3 Spalten -->
     <div id="paperdoll-area">
 
-      <!-- Links: Ausrüstung Kopf / Waffe / Körper / Hose / Extra -->
+      <!-- Links: Rüstung — Kopf / Körper / Hose / Schuhe / Handschuhe -->
       <div class="pd-col-left">
         <div class="pd-slot" data-slot="kopf">
           <div class="pd-slot-icon">🎩</div>
           <div class="pd-slot-info">
             <div class="pd-slot-label">Kopf</div>
-            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
-          </div>
-        </div>
-        <div class="pd-slot" data-slot="waffe">
-          <div class="pd-slot-icon">🔫</div>
-          <div class="pd-slot-info">
-            <div class="pd-slot-label">Waffe</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
@@ -206,10 +215,17 @@
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
-        <div class="pd-slot" data-slot="extra">
-          <div class="pd-slot-icon">🌟</div>
+        <div class="pd-slot" data-slot="füße">
+          <div class="pd-slot-icon">👟</div>
           <div class="pd-slot-info">
-            <div class="pd-slot-label">Extra</div>
+            <div class="pd-slot-label">Schuhe</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="handschuhe">
+          <div class="pd-slot-icon">🧤</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Handschuhe</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
@@ -230,8 +246,15 @@
         </div>
       </div>
 
-      <!-- Rechts: Ausrüstung Hals / Ring / Schuhe / Handschuhe / Gürtel -->
+      <!-- Rechts: Waffe & Schmuck — Waffe / Hals / Ring / Gürtel / Extra -->
       <div class="pd-col-right">
+        <div class="pd-slot" data-slot="waffe">
+          <div class="pd-slot-icon">🔫</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Waffe</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
         <div class="pd-slot" data-slot="hals">
           <div class="pd-slot-icon">📿</div>
           <div class="pd-slot-info">
@@ -246,24 +269,17 @@
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>
-        <div class="pd-slot" data-slot="füße">
-          <div class="pd-slot-icon">👟</div>
-          <div class="pd-slot-info">
-            <div class="pd-slot-label">Schuhe</div>
-            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
-          </div>
-        </div>
-        <div class="pd-slot" data-slot="handschuhe">
-          <div class="pd-slot-icon">🧤</div>
-          <div class="pd-slot-info">
-            <div class="pd-slot-label">Handschuhe</div>
-            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
-          </div>
-        </div>
         <div class="pd-slot" data-slot="gürtel">
           <div class="pd-slot-icon">⛓️</div>
           <div class="pd-slot-info">
             <div class="pd-slot-label">Gürtel</div>
+            <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
+          </div>
+        </div>
+        <div class="pd-slot" data-slot="extra">
+          <div class="pd-slot-icon">🌟</div>
+          <div class="pd-slot-info">
+            <div class="pd-slot-label">Extra</div>
             <div class="pd-slot-name" style="color:var(--muted)">Leer</div>
           </div>
         </div>

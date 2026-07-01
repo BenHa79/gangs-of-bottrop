@@ -121,6 +121,25 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 #map-view    { flex: 1; position: relative; overflow: hidden; background: #0d0b08; min-width: 0; min-height: 0; }
 #leaflet-map { position: absolute; inset: 0; z-index: 0; }
 
+/* ── Seitliche Icon-Navigation (S&F-Stil) ── */
+#nav-sidebar {
+  width: 72px; flex-shrink: 0; background: var(--paper); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: stretch; padding: 10px 0; gap: 4px; z-index: 1;
+}
+.nav-icon-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: transparent; border: none; border-left: 3px solid transparent; color: var(--muted);
+  padding: 10px 4px; cursor: pointer; transition: all .15s; font-family: 'Oswald', sans-serif;
+}
+.nav-icon-btn .nib-icon  { font-size: 24px; line-height: 1; }
+.nav-icon-btn .nib-label { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.nav-icon-btn:hover      { color: var(--gold); background: rgba(201,151,58,.06); }
+.nav-icon-btn.active     { color: var(--gold); background: rgba(201,151,58,.1); border-left-color: var(--gold); }
+.nav-icon-btn.disabled,
+.nav-icon-btn:disabled   { color: #4a4033; cursor: not-allowed; opacity: .55; }
+.nav-icon-btn.disabled:hover,
+.nav-icon-btn:disabled:hover { background: transparent; color: #4a4033; }
+
 /* Noir-Filter nur auf Kartenkacheln — Gebäude-Polygone bleiben farbig */
 .leaflet-tile-pane {
   filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9);
@@ -196,7 +215,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 
 /* Paper Doll — 3 Spalten */
 #paperdoll-area     { display: flex; align-items: flex-start; padding: 18px 24px 14px; gap: 6px; background: linear-gradient(180deg, #161310 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
-.pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 5px; width: 68px; flex-shrink: 0; }
+.pd-col-left,.pd-col-right { display: flex; flex-direction: column; gap: 4px; width: 56px; flex-shrink: 0; }
 .pd-col-center      { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pd-section-label   { font-size: 8px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; height: 14px; }
 
@@ -212,12 +231,12 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 .pd-xp-row .xp-bar-bg { height: 8px; }
 .xp-text            { font-size: 9px; color: var(--muted); margin-top: 3px; text-align: center; }
 
-/* Equip-Slots — quadratisch */
-.pd-slot            { width: 68px; height: 68px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: default; border: 1px solid var(--border); background: var(--dim); transition: border-color .15s; overflow: visible; }
+/* Equip-Slots — quadratisch, kompakt */
+.pd-slot            { width: 56px; height: 56px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: default; border: 1px solid var(--border); background: var(--dim); transition: border-color .15s; overflow: visible; }
 .pd-slot:not(.filled) { background-image: url('../assets/images/ui/slot-frame-empty.jpg'); background-size: cover; background-position: center; border: none; }
 .pd-slot.filled     { border-color: rgba(201,151,58,.5); cursor: pointer; }
 .pd-slot.filled:hover { border-color: var(--gold); background: #1c1a12; }
-.pd-slot-icon       { font-size: 22px; line-height: 1; text-align: center; position: relative; z-index: 1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+.pd-slot-icon       { font-size: 19px; line-height: 1; text-align: center; position: relative; z-index: 1; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
 .pd-slot-info       { display: none; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: rgba(14,11,8,.96); border: 1px solid var(--gold); padding: 5px 9px; white-space: nowrap; z-index: 100; pointer-events: none; }
 .pd-slot:hover .pd-slot-info { display: block; }
 .pd-slot-label      { font-size: 8px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
@@ -233,9 +252,14 @@ body { background: var(--bg); color: var(--text); font-family: 'Oswald', sans-se
 /* Stat-Upgrade-Reihen */
 .stat-upgrade-row   { display: flex; align-items: center; gap: 8px; background: var(--dim); border: 1px solid var(--border); padding: 9px 10px; margin-bottom: 6px; }
 .sur-icon           { font-size: 18px; flex-shrink: 0; }
-.sur-info           { flex: 1; min-width: 0; }
-.sur-label          { font-size: 11px; color: var(--white); font-weight: 600; }
-.sur-desc           { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.sur-info           { flex: 1; min-width: 0; position: relative; }
+.sur-label          { font-size: 11px; color: var(--white); font-weight: 600; cursor: help; display: inline-block; }
+.sur-desc           {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 100;
+  font-size: 10px; color: var(--text); background: rgba(14,11,8,.97); border: 1px solid var(--gold);
+  padding: 6px 9px; white-space: nowrap; pointer-events: none;
+}
+.sur-info:hover .sur-desc { display: block; }
 .sur-val            { font-size: 18px; font-weight: 700; color: var(--white); min-width: 30px; text-align: right; }
 .sur-cost           { font-size: 9px; min-width: 54px; text-align: right; }
 .btn-upgrade        { background: var(--gold); color: #0a0806; border: none; width: 26px; height: 26px; font-size: 17px; font-weight: 700; cursor: pointer; flex-shrink: 0; line-height: 1; transition: opacity .15s; font-family: monospace; }

@@ -22,7 +22,7 @@ function openMarkt() {
   marktItems = generateMarktItems(G.marktSeed);
   renderMarkt();
   document.getElementById('markt-screen').classList.add('open');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-icon-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-markt-view').classList.add('active');
 }
 

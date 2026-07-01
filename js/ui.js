@@ -177,7 +177,7 @@ function checkSchutzgeld() {
 // --------------- Navigation ---------------
 
 function setNav(activeId) {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-icon-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(activeId).classList.add('active');
 }
 
