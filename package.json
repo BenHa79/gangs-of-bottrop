@@ -8,10 +8,11 @@
     "db:init": "node db/init.js"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3",
+    "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "pg": "^8.13.3",
-    "bcryptjs": "^2.4.3"
+    "socket.io": "^4.8.3"
   }
 }

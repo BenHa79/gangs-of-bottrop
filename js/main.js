@@ -355,7 +355,6 @@ document.getElementById('btn-reset-account').addEventListener('click', async () 
   } else {
     // Login-Formular anzeigen
     document.getElementById('session-loading').style.display = 'none';
-    document.getElementById('session-loading').style.display = 'none';
     document.getElementById('auth-form').style.display       = 'flex';
     document.getElementById('auth-form').style.flexDirection = 'column';
     document.getElementById('auth-form').style.gap           = '12px';

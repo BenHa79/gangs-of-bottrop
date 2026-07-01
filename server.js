@@ -15,6 +15,8 @@ const { Pool }     = require('pg');
 const bcrypt       = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const crypto       = require('crypto');
+const rateLimit    = require('express-rate-limit');
+const { XP_TABLE, STAT_UPGRADE_INCREMENTS, BASE_STATS, findKnownItem } = require('./server/gameData');
 
 const PORT   = process.env.PORT || 3000;
 const app    = express();
@@ -33,7 +35,21 @@ pool.connect()
 // ── Middleware ────────────────────────────────────────────────
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname)));
+
+// Nur die tatsächlich benötigten Ordner öffentlich servieren —
+// server.js, package.json, db/, tools/ etc. bleiben unzugänglich.
+app.use('/css',    express.static(path.join(__dirname, 'css')));
+app.use('/js',     express.static(path.join(__dirname, 'js')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
+// Brute-Force-Schutz für Login/Registrierung
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit:    20,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { error: 'Zu viele Versuche. Bitte später erneut versuchen.' },
+});
 
 // ── Auth-Middleware ───────────────────────────────────────────
 async function requireAuth(req, res, next) {
@@ -127,6 +143,75 @@ async function savePlayerData(userId, G) {
   ]);
 }
 
+// ── Helper: Zahlenwerte klemmen/validieren ────────────────────
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+// ── Helper: Client-Spielstand gegen bekannte Spielregeln prüfen ─
+// Der Client berechnet Kampf/Loot/Preise selbst und schickt den
+// kompletten Zustand per PUT /api/player. Damit niemand über die
+// Konsole beliebige Werte setzen kann, werden Stats aus statLevels
+// + Ausrüstung neu berechnet und Items/Inventar gegen den
+// bekannten Item-Katalog geprüft, statt dem Client blind zu glauben.
+function sanitizePlayerData(G) {
+  const inP = (G && typeof G.player === 'object' && G.player) || {};
+
+  const statLevels = {};
+  for (const key of Object.keys(STAT_UPGRADE_INCREMENTS)) {
+    statLevels[key] = clampNumber(inP.statLevels && inP.statLevels[key], 0, 300, 0);
+  }
+
+  const equip = {};
+  if (inP.equip && typeof inP.equip === 'object') {
+    for (const [slot, item] of Object.entries(inP.equip)) {
+      const known = findKnownItem(item);
+      if (known) equip[slot] = known;
+    }
+  }
+
+  const stats = { ...BASE_STATS };
+  for (const [key, inc] of Object.entries(STAT_UPGRADE_INCREMENTS)) {
+    stats[key] += statLevels[key] * inc;
+  }
+  for (const item of Object.values(equip)) {
+    for (const [k, v] of Object.entries(item.bonus || {})) {
+      stats[k] = (stats[k] || 0) + v;
+    }
+  }
+
+  const inventory = (Array.isArray(inP.inventory) ? inP.inventory : [])
+    .slice(0, 300)
+    .map(findKnownItem)
+    .filter(Boolean);
+
+  const level      = clampNumber(inP.level, 1, XP_TABLE.length, 1);
+  const maxEnergy  = Math.min(200, 100 + level * 5);
+
+  return {
+    player: {
+      level,
+      xp:              clampNumber(inP.xp, 0, 10_000_000, 0),
+      money:           clampNumber(inP.money, 0, 100_000_000, 0),
+      energy:          clampNumber(inP.energy, 0, maxEnergy, maxEnergy),
+      maxEnergy,
+      energyLastReset: Math.min(Date.now(), clampNumber(inP.energyLastReset, 0, Date.now(), Date.now())),
+      honor:           clampNumber(inP.honor, 0, 10_000_000, 0),
+      stats,
+      statLevels,
+      equip,
+      inventory,
+    },
+    mission:    G.mission ?? null,
+    sgeldTimer: clampNumber(G.sgeldTimer, 0, Number.MAX_SAFE_INTEGER, Date.now() + 86_400_000),
+    marktTimer: clampNumber(G.marktTimer, 0, Number.MAX_SAFE_INTEGER, Date.now() + 86_400_000),
+    marktSeed:  clampNumber(G.marktSeed, 0, 999_999, 0),
+    log:        Array.isArray(G.log) ? G.log.slice(0, 50) : [],
+  };
+}
+
 // ── Helper: Session-Cookie setzen ────────────────────────────
 function setSessionCookie(res, token) {
   res.cookie('session_token', token, {
@@ -142,7 +227,7 @@ function setSessionCookie(res, token) {
 // ════════════════════════════════════════════════════════════
 
 // POST /api/register
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password)
     return res.status(400).json({ error: 'Benutzername und Passwort erforderlich' });
@@ -184,7 +269,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // POST /api/login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password)
     return res.status(400).json({ error: 'Benutzername und Passwort erforderlich' });
@@ -251,8 +336,11 @@ app.get('/api/me', requireAuth, async (req, res) => {
 
 // PUT /api/player
 app.put('/api/player', requireAuth, async (req, res) => {
+  if (!req.body || typeof req.body.player !== 'object')
+    return res.status(400).json({ error: 'Ungültige Spielerdaten' });
   try {
-    await savePlayerData(req.userId, req.body);
+    const safe = sanitizePlayerData(req.body);
+    await savePlayerData(req.userId, safe);
     res.json({ ok: true });
   } catch (e) {
     console.error('[save]', e.message);
@@ -283,7 +371,7 @@ app.get('/api/buildings', requireAuth, async (req, res) => {
 // POST /api/buildings/:osmId  — Gebäude einnehmen / Besitz wechseln
 app.post('/api/buildings/:osmId', requireAuth, async (req, res) => {
   const { osmId } = req.params;
-  const { verteidigung_staerke = 0 } = req.body || {};
+  const verteidigung_staerke = clampNumber(req.body && req.body.verteidigung_staerke, 0, 1000, 0);
   try {
     await pool.query(`
       INSERT INTO buildings (osm_id, owner_id, eingenommen_am, verteidigung_staerke)
@@ -317,14 +405,10 @@ app.delete('/api/buildings/:osmId', requireAuth, async (req, res) => {
 // INVENTAR ROUTES
 // ════════════════════════════════════════════════════════════
 
-// ════════════════════════════════════════════════════════════
-// INVENTAR ROUTES
-// ════════════════════════════════════════════════════════════
-
 // POST /api/inventory  — neues Item hinzufügen
 app.post('/api/inventory', requireAuth, async (req, res) => {
-  const item = req.body;
-  if (!item || !item.name) return res.status(400).json({ error: 'Kein Item' });
+  const item = findKnownItem(req.body);
+  if (!item) return res.status(400).json({ error: 'Unbekanntes Item' });
   try {
     const itemId = item.slot + '_' + item.name.toLowerCase().replace(/\s+/g, '_').slice(0, 40);
     await pool.query(
