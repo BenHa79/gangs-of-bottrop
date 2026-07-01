@@ -3,7 +3,8 @@
 // ============================================================
 // Autoritative Spieldaten für serverseitige Plausibilitätsprüfungen.
 // Muss inhaltlich mit js/constants.js übereinstimmen (Items, Stat-
-// Upgrades, XP-Tabelle) — Änderungen dort auch hier nachziehen.
+// Upgrades, XP-Tabelle, Gebäudetypen) — Änderungen dort auch hier
+// nachziehen.
 // ============================================================
 
 'use strict';
@@ -11,6 +12,24 @@
 const XP_TABLE = [0,100,250,500,900,1500,2400,3700,5500,8000,12000,17000,24000,33000,45000];
 
 const BASE_STATS = { str: 5, end: 50, ges: 5, lck: 5, inf: 1, rep: 0, cha: 1 };
+
+const BUILDING_TYPES = [
+  { type:'Wohnhaus',   baseIncome:30,   strength:0,   energyCost:3,  xp:10,   honor:2,   isResidential:true  },
+  { type:'Kiosk',      baseIncome:60,   strength:4,   energyCost:5,  xp:20,   honor:5,   isResidential:false },
+  { type:'Imbiss',     baseIncome:100,  strength:7,   energyCost:10, xp:40,   honor:8,   isResidential:false },
+  { type:'Tankstelle', baseIncome:180,  strength:12,  energyCost:15, xp:60,   honor:15,  isResidential:false },
+  { type:'Restaurant', baseIncome:320,  strength:20,  energyCost:20, xp:100,  honor:25,  isResidential:false },
+  { type:'Supermarkt', baseIncome:480,  strength:30,  energyCost:25, xp:150,  honor:35,  isResidential:false },
+  { type:'Nachtclub',  baseIncome:750,  strength:45,  energyCost:35, xp:250,  honor:60,  isResidential:false },
+  { type:'Spielhalle', baseIncome:1100, strength:65,  energyCost:45, xp:400,  honor:100, isResidential:false },
+  { type:'Juwelier',   baseIncome:1800, strength:90,  energyCost:60, xp:600,  honor:150, isResidential:false },
+  { type:'Kasino',     baseIncome:4500, strength:150, energyCost:80, xp:1000, honor:300, isResidential:false },
+];
+
+function findBuildingType(type) {
+  if (typeof type !== 'string') return null;
+  return BUILDING_TYPES.find(t => t.type === type) || null;
+}
 
 // key -> Statwert-Zuwachs pro Upgrade-Stufe (siehe js/constants.js STAT_UPGRADES)
 const STAT_UPGRADE_INCREMENTS = { str: 2, end: 15, lck: 1, inf: 1, ges: 1, cha: 1 };
@@ -172,4 +191,6 @@ module.exports = {
   STAT_UPGRADE_INCREMENTS,
   ALL_ITEMS,
   findKnownItem,
+  BUILDING_TYPES,
+  findBuildingType,
 };

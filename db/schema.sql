@@ -70,6 +70,14 @@ CREATE TABLE IF NOT EXISTS buildings (
 
 CREATE INDEX IF NOT EXISTS idx_buildings_owner ON buildings(owner_id);
 
+-- PvP-Gebäudekampf: Gebäudetyp serverseitig bekannt (für Belohnungen),
+-- plus 24h-Schutz für den Verlierer eines Kampfes (verhindert Ping-Pong).
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS building_type          VARCHAR(30);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS last_loser_id          INT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS loser_protected_until  TIMESTAMP;
+
+CREATE INDEX IF NOT EXISTS idx_buildings_protection ON buildings(last_loser_id, loser_protected_until);
+
 -- ── INVENTAR ──────────────────────────────────────────────────
 -- Phase 1: Inventar wird als JSONB in users.equip/G gespeichert.
 -- Diese Tabelle ist für Phase 2 (separates Item-Management) vorbereitet.

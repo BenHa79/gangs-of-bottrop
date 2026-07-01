@@ -79,8 +79,8 @@ function openKampf(b) {
     building:     b,
     npcData:      nd,
     npc,
-    playerHP:     100 + G.player.stats.end + G.player.level * 8,
-    playerMaxHP:  100 + G.player.stats.end + G.player.level * 8,
+    playerHP:     CombatFormulas.computeMaxHP(G.player.stats, G.player.level),
+    playerMaxHP:  CombatFormulas.computeMaxHP(G.player.stats, G.player.level),
     enemyHP:      nd.hp + b.data.strength * 2,
     enemyMaxHP:   nd.hp + b.data.strength * 2,
     round:        0,
@@ -99,6 +99,165 @@ function openKampf(b) {
 
   showPhase('ankunft');
   document.getElementById('kampf-screen').classList.add('open');
+}
+
+// --------------- PvP-Kampf (Gebäude eines anderen Spielers) ---------------
+// Ablauf wie beim NPC-Kampf: erst "Ankunft"-Phase zeigen (Gegner-Name aus
+// b.ownerName, kein Server-Call), erst bei "Auf ihn!" wird der Kampf
+// tatsächlich serverseitig ausgetragen — so bleibt "Feige zurückziehen"
+// wie gewohnt folgenlos möglich.
+
+function openPvpKampf(b) {
+  isProcessing = true;    // checkMission() sperren
+  G.mission    = null;
+  saveGame();
+
+  kampfState = {
+    isPvp: true,
+    building: b,
+    defenderName: b.ownerName || 'Rivale',
+  };
+
+  document.getElementById('ka-art').textContent       = '⚔️';
+  document.getElementById('ka-name').textContent      = b.label || b.data.type;
+  document.getElementById('ka-desc').textContent      = `${kampfState.defenderName} kontrolliert dieses Revier — hier gibt's Ärger.`;
+  document.getElementById('ka-portrait').textContent  = '🥷';
+  document.getElementById('ka-npc-name').textContent  = kampfState.defenderName;
+  document.getElementById('ka-npc-title').textContent = 'Rivalisierender Pate';
+  document.getElementById('ka-npc-quote').textContent = '"Das ist mein Revier."';
+  document.getElementById('ka-hp').textContent        = '???';
+  document.getElementById('ka-str').textContent       = '???';
+  document.getElementById('ka-danger').textContent    = '❓';
+
+  const lade = document.getElementById('ladescreen');
+  if (lade) lade.classList.remove('active');
+
+  showPhase('ankunft');
+  document.getElementById('kampf-screen').classList.add('open');
+}
+
+// Wird beim Klick auf "Auf ihn!" aufgerufen (siehe main.js) — trägt den
+// Kampf serverseitig aus und speist danach den bestehenden Kampf-Screen.
+async function startPvpFight() {
+  const ks = kampfState;
+  const b  = ks.building;
+  let data;
+  try {
+    const res = await fetch(`/api/buildings/${b.osmId}/attack`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ type: b.data.type }),
+    });
+    data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Angriff fehlgeschlagen');
+  } catch (e) {
+    document.getElementById('kampf-screen').classList.remove('open');
+    isProcessing = false;
+    kampfState   = null;
+    showToast(`⚠️ ${e.message}`);
+    await refreshBuildingsFromServer();
+    drawCity();
+    return;
+  }
+
+  Object.assign(ks, {
+    rounds:      data.rounds,
+    roundIdx:    0,
+    win:         data.win,
+    rewards:     data.rewards,
+    defenderName: data.defenderName,
+    playerHP:    data.playerMaxHP, playerMaxHP: data.playerMaxHP,
+    enemyHP:     data.enemyMaxHP,  enemyMaxHP:  data.enemyMaxHP,
+    round:       0,
+  });
+
+  showPhase('kampf');
+  const weapon = G.player.equip['waffe'];
+  document.getElementById('kk-player-name').textContent    = G.player.name;
+  document.getElementById('kk-enemy-name').textContent     = data.defenderName;
+  document.getElementById('kk-enemy-portrait').textContent = '🥷';
+  document.getElementById('kk-weapon').textContent         = weapon ? `${weapon.icon} ${weapon.name}` : '👊 Fäuste';
+  updateKampfBars();
+  setTimeout(runRound, 600);
+}
+
+function runPvpRound() {
+  const ks = kampfState;
+  if (ks.roundIdx >= ks.rounds.length) { endKampf(); return; }
+  const r = ks.rounds[ks.roundIdx++];
+  ks.round    = r.round;
+  ks.playerHP = r.playerHpAfter;
+  ks.enemyHP  = r.enemyHpAfter;
+
+  const weapon = G.player.equip['waffe'];
+  const wName  = weapon ? weapon.name : 'Fäuste';
+
+  let html = `<div class="kampf-round ${r.special ? 'special' : ''}"><div class="round-num">Runde ${r.round}</div><div>`;
+  if (r.special) {
+    const ev = SPECIAL_EVENTS[r.special.index];
+    html += `<em style="color:var(--gold)">✨ ${ev.text({ name: ks.defenderName })}</em><br>`;
+  }
+  html += `Du triffst mit <strong>${wName}</strong> – <span class="dmg-player">-${r.pDmg} HP${r.crit ? ' (KRIT!!)' : ''}</span><br>`;
+  html += r.eDmg > 0
+    ? `${ks.defenderName} schlägt zurück – <span class="dmg-enemy">-${r.eDmg} HP</span>`
+    : `${ks.defenderName} kann sich nicht wehren!`;
+  html += `</div></div>`;
+
+  const log = document.getElementById('kampf-log');
+  log.insertAdjacentHTML('beforeend', html);
+  log.scrollTop = log.scrollHeight;
+
+  updateKampfBars();
+  document.getElementById('kk-status').textContent =
+    ks.playerHP > ks.enemyHP ? 'Du dominierst!' : 'Knapp...';
+
+  if (ks.playerHP <= 0 || ks.enemyHP <= 0 || ks.roundIdx >= ks.rounds.length) setTimeout(endKampf, 600);
+  else                                                                          setTimeout(runPvpRound, 900);
+}
+
+function endPvpKampf() {
+  const ks  = kampfState;
+  const won = ks.win;
+
+  if (won) {
+    ks.building.owned        = true;
+    ks.building.ownedByMe    = true;
+    ks.building.ownedByOther = false;
+    G.mission = null;
+    G.player.xp    += ks.rewards.xp;
+    checkLevelUp();
+    G.player.money += ks.rewards.money;
+    G.player.honor += ks.rewards.honor;
+    checkRankUp();
+
+    addLog(`⚔️ ${ks.building.data.icon} ${ks.building.label || ks.building.data.type} von ${ks.defenderName} erobert! +${formatMoney(ks.rewards.money)} +${ks.rewards.xp}XP +${ks.rewards.honor} Ehre`, 'gold');
+
+    document.getElementById('er-scene').textContent = '⚔️';
+    document.getElementById('er-title').textContent = 'Sieg!';
+    document.getElementById('er-title').className   = 'ergebnis-title win';
+    document.getElementById('er-desc').textContent  = `${ks.defenderName} musste das Revier abgeben.`;
+    document.getElementById('er-rewards').innerHTML = `
+      <div class="reward-card"><div class="rc-icon">💵</div><div class="rc-val">${formatMoney(ks.rewards.money)}</div><div class="rc-label">Bargeld</div></div>
+      <div class="reward-card"><div class="rc-icon">⭐</div><div class="rc-val">${ks.rewards.xp}</div><div class="rc-label">XP</div></div>
+      <div class="reward-card"><div class="rc-icon">⚜️</div><div class="rc-val">${ks.rewards.honor}</div><div class="rc-label">Ehre</div></div>`;
+  } else {
+    G.mission = null;
+    const honorLoss = Math.floor(ks.building.data.honor * 0.3);
+    G.player.honor = Math.max(0, G.player.honor - honorLoss);
+
+    addLog(`💀 Niederlage gegen ${ks.defenderName} bei ${ks.building.data.icon} ${ks.building.label || ks.building.data.type}. -${honorLoss} Ehre`, 'bad');
+
+    document.getElementById('er-scene').textContent = '💀';
+    document.getElementById('er-title').textContent = 'Niederlage!';
+    document.getElementById('er-title').className   = 'ergebnis-title lose';
+    document.getElementById('er-desc').textContent  = `${ks.defenderName} hat sein Revier erfolgreich verteidigt.`;
+    document.getElementById('er-rewards').innerHTML =
+      `<div class="reward-card"><div class="rc-icon">😞</div><div class="rc-val" style="font-size:13px;">Nichts</div><div class="rc-label">-${honorLoss} Ehre</div></div>`;
+  }
+
+  showPhase('ergebnis');
+  saveGame(); updateHUD(); drawCity();
+  refreshBuildingsFromServer();   // endgültigen Stand (Schutz, neuer Besitzer) sofort nachziehen
 }
 
 function showPhase(p) {
@@ -120,16 +279,14 @@ function updateKampfBars() {
 
 function runRound() {
   const ks = kampfState;
+  if (ks.isPvp) { runPvpRound(); return; }
   if (ks.playerHP <= 0 || ks.enemyHP <= 0) { endKampf(); return; }
   ks.round++;
 
   const weapon = G.player.equip['waffe'];
   const wBonus = weapon ? (weapon.bonus.str || 0) : 0;
-  let pDmg = Math.max(1, Math.floor(
-    (G.player.stats.str + wBonus) * 0.8 +
-    Math.random() * (G.player.stats.str * 0.5 + 3)
-  ));
-  const crit = Math.random() < (0.05 + G.player.stats.lck * 0.01);
+  let pDmg = CombatFormulas.computeAttackDamage(G.player.stats, wBonus);
+  const crit = Math.random() < CombatFormulas.computeCritChance(G.player.stats);
   if (crit) pDmg = Math.floor(pDmg * 2);
 
   const eStr = ks.npcData.str + ks.building.data.strength;
@@ -169,7 +326,8 @@ function runRound() {
 }
 
 function endKampf() {
-  const ks  = kampfState;
+  const ks = kampfState;
+  if (ks.isPvp) { endPvpKampf(); return; }
   const won = ks.enemyHP <= 0 && ks.playerHP > 0;
 
   if (won) {

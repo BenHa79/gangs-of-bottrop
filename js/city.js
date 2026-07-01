@@ -59,6 +59,11 @@ function applyBuildingOwnership(serverBuildings, currentUserId) {
     }
     b.owned = b.ownedByMe;   // Rückwärtskompatibilität
 
+    // 24h-Schutz: nur relevant, wenn ICH das Gebäude zuletzt verloren habe
+    b.attackProtectedUntil = (sb && sb.last_loser_id === currentUserId && sb.loser_protected_until)
+      ? new Date(sb.loser_protected_until).getTime()
+      : 0;
+
     // G.buildingStatus aktualisieren (für saveBuilding-Logik)
     if (G?.buildingStatus) {
       if (b.ownedByMe) G.buildingStatus[b.osmId] = true;
@@ -133,6 +138,7 @@ async function loadWohngebaeude() {
       ownedByMe:   false,
       ownedByOther: false,
       ownerName:   '',
+      attackProtectedUntil: 0,
       hovered:  false,
     });
   }

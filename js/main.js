@@ -37,8 +37,15 @@ function loadGame() {
 // --------------- Building interaction ---------------
 
 function canTake(b) {
-  if (!G)             return { ok: false, reason: '' };
-  if (b.ownedByOther) return { ok: false, reason: 'Fremdes Revier' };
+  if (!G) return { ok: false, reason: '' };
+  if (b.ownedByOther) {
+    if (b.attackProtectedUntil && b.attackProtectedUntil > Date.now())
+      return { ok: false, reason: `🛡️ Geschützt bis ${new Date(b.attackProtectedUntil).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` };
+    if (G.mission) return { ok: false, reason: '⏳ Auftrag läuft' };
+    if (G.player.energy < b.data.energyCost)
+      return { ok: false, reason: `❌ Zu wenig Energie (${b.data.energyCost} nötig)` };
+    return { ok: true, reason: '⚔️ Angreifen möglich' };
+  }
   if (b.owned)        return { ok: false, reason: 'Bereits dein' };
   if (G.mission)      return { ok: false, reason: '⏳ Auftrag läuft' };
   if (G.player.energy < b.data.energyCost)
@@ -79,6 +86,7 @@ function arriveAtBuilding() {
   const b = buildings.find(x => x.osmId === G.mission.buildingOsmId)
          || buildings[G.mission.buildingIdx];   // Fallback: alter Spielstand
   if (!b) { G.mission = null; isProcessing = false; return; }
+  if (b.ownedByOther) { openPvpKampf(b); return; }
   // Ladebildschirm ausblenden bevor Kampf/Einschüchterung öffnet
   const lade = document.getElementById('ladescreen');
   if (lade) lade.classList.remove('active');
@@ -216,7 +224,8 @@ document.getElementById('btn-abort-kampf').addEventListener('click', () => {
 });
 
 // Kampf – start fight
-document.getElementById('btn-start-kampf').addEventListener('click', () => {
+document.getElementById('btn-start-kampf').addEventListener('click', async () => {
+  if (kampfState?.isPvp) { await startPvpFight(); return; }
   showPhase('kampf');
   const weapon = G.player.equip['waffe'];
   document.getElementById('kk-player-name').textContent    = G.player.name;

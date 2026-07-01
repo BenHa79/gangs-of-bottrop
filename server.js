@@ -16,7 +16,8 @@ const bcrypt       = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const crypto       = require('crypto');
 const rateLimit    = require('express-rate-limit');
-const { XP_TABLE, STAT_UPGRADE_INCREMENTS, BASE_STATS, findKnownItem } = require('./server/gameData');
+const { XP_TABLE, STAT_UPGRADE_INCREMENTS, BASE_STATS, findKnownItem, findBuildingType } = require('./server/gameData');
+const { resolvePvp } = require('./server/pvpCombat');
 
 const PORT   = process.env.PORT || 3000;
 const app    = express();
@@ -49,6 +50,16 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Zu viele Versuche. Bitte später erneut versuchen.' },
+});
+
+// Zusätzliche Bremse für Gebäude-Angriffe (Energie-/Reisezeit-Kosten
+// bremsen ohnehin schon, das hier ist nur ein zusätzliches Sicherheitsnetz)
+const attackLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit:    20,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { error: 'Zu viele Angriffe. Kurz warten.' },
 });
 
 // ── Auth-Middleware ───────────────────────────────────────────
@@ -357,6 +368,7 @@ app.get('/api/buildings', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT b.osm_id, b.owner_id, b.eingenommen_am, b.verteidigung_staerke,
+             b.building_type, b.last_loser_id, b.loser_protected_until,
              u.username AS owner_name
       FROM   buildings b
       LEFT JOIN users u ON u.id = b.owner_id
@@ -368,11 +380,20 @@ app.get('/api/buildings', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/buildings/:osmId  — Gebäude einnehmen / Besitz wechseln
+// POST /api/buildings/:osmId  — unbesetztes Gebäude einnehmen (Einschüchterung)
+// Angriffe auf bereits besetzte Gebäude laufen ausschließlich über
+// POST /api/buildings/:osmId/attack — dieser Endpoint lehnt das ab,
+// sonst könnte man den Kampf einfach umgehen und Gebäude "erschleichen".
 app.post('/api/buildings/:osmId', requireAuth, async (req, res) => {
   const { osmId } = req.params;
   const verteidigung_staerke = clampNumber(req.body && req.body.verteidigung_staerke, 0, 1000, 0);
   try {
+    const { rows: [existing] } = await pool.query(
+      'SELECT owner_id FROM buildings WHERE osm_id = $1', [osmId]
+    );
+    if (existing && existing.owner_id && existing.owner_id !== req.userId) {
+      return res.status(409).json({ error: 'Gebäude ist bereits besetzt', code: 'ALREADY_OWNED' });
+    }
     await pool.query(`
       INSERT INTO buildings (osm_id, owner_id, eingenommen_am, verteidigung_staerke)
       VALUES ($1, $2, NOW(), $3)
@@ -385,6 +406,87 @@ app.post('/api/buildings/:osmId', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[claim]', e.message);
     res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// POST /api/buildings/:osmId/attack — Gebäude eines anderen Spielers angreifen
+// Kampfausgang wird ausschließlich serverseitig entschieden (resolvePvp) —
+// der Client bekommt das fertige Rundenlog nur zur Anzeige zurück.
+app.post('/api/buildings/:osmId/attack', attackLimiter, requireAuth, async (req, res) => {
+  const { osmId } = req.params;
+  const buildingType = findBuildingType(req.body && req.body.type);
+  if (!buildingType) return res.status(400).json({ error: 'Unbekannter Gebäudetyp' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: [row] } = await client.query(
+      'SELECT owner_id, last_loser_id, loser_protected_until FROM buildings WHERE osm_id = $1 FOR UPDATE',
+      [osmId]
+    );
+    if (!row || !row.owner_id) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Gebäude ist nicht besetzt', code: 'NOT_OWNED' });
+    }
+    if (row.owner_id === req.userId) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Kannst dein eigenes Revier nicht angreifen' });
+    }
+    if (row.last_loser_id === req.userId && row.loser_protected_until && new Date(row.loser_protected_until) > new Date()) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Geschützt', code: 'PROTECTED', until: row.loser_protected_until });
+    }
+
+    const [attackerData, defenderData] = await Promise.all([
+      loadPlayerData(req.userId),
+      loadPlayerData(row.owner_id),
+    ]);
+    if (!attackerData || !defenderData) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Spieler nicht gefunden' });
+    }
+
+    const result = resolvePvp(
+      { level: attackerData.player.level, stats: attackerData.player.stats, equip: attackerData.player.equip },
+      { level: defenderData.player.level, stats: defenderData.player.stats, equip: defenderData.player.equip }
+    );
+
+    let rewards = null;
+    if (result.win) {
+      rewards = {
+        money: buildingType.baseIncome + Math.floor(Math.random() * buildingType.baseIncome * 0.5),
+        xp:    buildingType.xp,
+        honor: buildingType.honor,
+      };
+      await client.query(`
+        UPDATE buildings
+           SET owner_id = $1, eingenommen_am = NOW(), building_type = $2,
+               verteidigung_staerke = $3,
+               last_loser_id = $4, loser_protected_until = NOW() + INTERVAL '24 hours'
+         WHERE osm_id = $5
+      `, [req.userId, buildingType.type, buildingType.strength, row.owner_id, osmId]);
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      ok: true,
+      win: result.win,
+      rounds: result.rounds,
+      attackerName: attackerData.player.name,
+      defenderName: defenderData.player.name,
+      playerMaxHP: result.playerMaxHP,
+      enemyMaxHP:  result.enemyMaxHP,
+      rewards,
+      buildingType: buildingType.type,
+    });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('[attack]', e.message);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  } finally {
+    client.release();
   }
 });
 

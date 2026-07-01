@@ -209,10 +209,16 @@ function showTooltip(b, forceUpdate = false) {
   const ttBtn  = document.getElementById('tt-btn');
   const lockEl = document.getElementById('bi-lock');
 
-  if (b.ownedByOther) {
+  if (b.ownedByOther && b.attackProtectedUntil && b.attackProtectedUntil > Date.now()) {
+    const until = new Date(b.attackProtectedUntil).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     status.style.borderLeftColor = '#5555ee'; status.style.color = '#9090ff';
-    status.textContent = `Besetzt von: ${b.ownerName || 'anderem Spieler'}`;
-    ttBtn.textContent  = 'Fremdes Revier'; ttBtn.disabled = true;
+    status.textContent = `🛡️ Geschützt bis ${until} (von: ${b.ownerName})`;
+    ttBtn.textContent  = '🛡️ Geschützt'; ttBtn.disabled = true;
+  } else if (b.ownedByOther) {
+    status.style.borderLeftColor = '#5555ee'; status.style.color = '#9090ff';
+    status.textContent = `Besetzt von: ${b.ownerName || 'anderem Spieler'} — angreifbar!`;
+    const check = canTake(b);
+    ttBtn.textContent  = '⚔️ Angreifen'; ttBtn.disabled = !check.ok;
   } else if (b.owned) {
     status.style.borderLeftColor = '#2ecc71'; status.style.color = '#2ecc71';
     status.textContent = 'Bereits unter deiner Kontrolle';
